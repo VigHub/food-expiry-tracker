@@ -1,6 +1,4 @@
-import adapter from '@sveltejs/adapter-static';
-
-const dev = process.argv.includes('dev');
+import adapter from '@sveltejs/adapter-cloudflare';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -9,15 +7,7 @@ const config = {
 		runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
 	},
 	kit: {
-		adapter: adapter({
-			pages: 'build',
-			assets: 'build',
-			fallback: '404.html',
-			strict: true
-		}),
-		paths: {
-			base: dev ? '' : '/food-expiry-tracker'
-		}
+		adapter: adapter()
 	}
 };
 
