@@ -11,6 +11,7 @@
   let showBackupPanel = $state(false);
   let fileInputRef = $state<HTMLInputElement | null>(null);
   let importSuccess = $state<boolean | null>(null);
+  let isMigrating = $state(false);
 
   // Derived properties from store
   const items = $derived(pantryStore.filteredItems());
@@ -23,7 +24,7 @@
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Did you consume or throw away this item?')) {
+    if (confirm('Hai consumato o eliminato questo alimento?')) {
       pantryStore.removeItem(id);
     }
   };
@@ -49,7 +50,7 @@
     if (target.files && target.files[0]) {
       const file = target.files[0];
       const text = await file.text();
-      const success = pantryStore.importJSON(text);
+      const success = await pantryStore.importJSON(text);
       importSuccess = success;
       
       // Clear file input
@@ -60,21 +61,47 @@
       }, 3000);
     }
   };
+
+  const handleMigration = async () => {
+    isMigrating = true;
+    await pantryStore.syncLocalStorageToCloud();
+    isMigrating = false;
+  };
 </script>
+
+<!-- Migration Banner for Local Browser Data -->
+{#if pantryStore.hasLocalDataToMigrate}
+  <div class="migration-banner" transition:slide={{ duration: 250 }}>
+    <div class="migration-content">
+      <span class="migration-icon">📲</span>
+      <div class="migration-text">
+        <strong>Dati locali trovati nel browser</strong>
+        <p>Hai alimenti salvati in locale. Vuoi trasferirli nel database online Cloudflare D1?</p>
+      </div>
+    </div>
+    <button class="btn-migrate" onclick={handleMigration} disabled={isMigrating}>
+      {#if isMigrating}
+        ⏳ Sincronizzazione in corso...
+      {:else}
+        ☁️ Migra in Cloudflare D1
+      {/if}
+    </button>
+  </div>
+{/if}
 
 <!-- Header & Statistics -->
 <header class="app-header glass-panel">
   <div class="header-top">
     <div class="title-group">
-      <h1>Smart Fridge ❄️</h1>
-      <p>Expiration date tracker</p>
+      <h1>Dispensa Online ❄️</h1>
+      <p>Tracciamento scadenze con Cloudflare D1</p>
     </div>
     
     <!-- Settings / Backup Button -->
     <button 
       class="settings-toggle-btn {showBackupPanel ? 'active' : ''}" 
       onclick={() => showBackupPanel = !showBackupPanel}
-      aria-label="Backup and Restore menu"
+      aria-label="Menu Backup e Ripristino"
     >
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
@@ -86,22 +113,22 @@
   <!-- Backup Restore Panel (Collapsible) -->
   {#if showBackupPanel}
     <div class="backup-panel" transition:slide={{ duration: 200 }}>
-      <h4>Backup & Restore</h4>
-      <p class="panel-desc">Export data as JSON or restore from a previously exported file.</p>
+      <h4>Backup & Ripristino</h4>
+      <p class="panel-desc">Esporta i dati in formato JSON o ripristina da un file salvato.</p>
       
       <div class="backup-actions">
         <button class="backup-btn export-btn" onclick={handleExport}>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
           </svg>
-          Export Backup
+          Esporta Backup
         </button>
         
         <label class="backup-btn import-btn-label">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
           </svg>
-          Import Backup
+          Importa Backup
           <input 
             type="file" 
             accept=".json" 
@@ -113,9 +140,9 @@
       </div>
 
       {#if importSuccess === true}
-        <p class="status-msg success">Backup imported successfully!</p>
+        <p class="status-msg success">Backup importato e sincronizzato con successo!</p>
       {:else if importSuccess === false}
-        <p class="status-msg error">Failed to import backup. Invalid JSON file.</p>
+        <p class="status-msg error">Errore nell'importazione del backup. File JSON non valido.</p>
       {/if}
     </div>
   {/if}
@@ -124,17 +151,17 @@
   <div class="stats-grid">
     <div class="stat-card">
       <span class="stat-value">{stats.total}</span>
-      <span class="stat-label">Total Items</span>
+      <span class="stat-label">Prodotti Totali</span>
     </div>
     
     <div class="stat-card ring-danger">
       <span class="stat-value text-danger">{stats.expired}</span>
-      <span class="stat-label">Expired</span>
+      <span class="stat-label">Scaduti</span>
     </div>
     
     <div class="stat-card ring-warning">
       <span class="stat-value text-warning">{stats.expiringSoon}</span>
-      <span class="stat-label">Expiring Soon</span>
+      <span class="stat-label">In Scadenza (3gg)</span>
     </div>
   </div>
 </header>
@@ -148,12 +175,12 @@
       </svg>
       <input 
         type="text" 
-        placeholder="Search food by name or brand..." 
+        placeholder="Cerca per nome o marca..." 
         bind:value={pantryStore.searchQuery}
         class="search-input" 
       />
       {#if pantryStore.searchQuery}
-        <button class="clear-search-btn" onclick={() => pantryStore.searchQuery = ''} aria-label="Clear search">
+        <button class="clear-search-btn" onclick={() => pantryStore.searchQuery = ''} aria-label="Cancella ricerca">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
@@ -163,11 +190,11 @@
 
     <!-- Sorting -->
     <div class="sort-selector">
-      <label for="sort-select" class="sr-only">Sort by</label>
+      <label for="sort-select" class="sr-only">Ordina per</label>
       <select id="sort-select" class="sort-select" bind:value={pantryStore.sortBy}>
-        <option value="expiry">📅 Expiry Date</option>
-        <option value="name">🔤 Alphabetical</option>
-        <option value="added">⏱️ Added Date</option>
+        <option value="expiry">📅 Data Scadenza</option>
+        <option value="name">🔤 Alfabetico</option>
+        <option value="added">⏱️ Data Aggiunta</option>
       </select>
     </div>
   </div>
@@ -215,10 +242,10 @@
             <path d="M9 14h.01M9 17h.01M15 14h.01M15 17h.01"/>
           </svg>
         </div>
-        <h3>No food tracked</h3>
-        <p>Your search or category filter did not match any items in the fridge.</p>
+        <h3>Nessun alimento trovato</h3>
+        <p>Nessun prodotto corrisponde ai filtri selezionati nella tua dispensa online.</p>
         <button class="add-first-btn" onclick={handleAddNew}>
-          Add Food Now
+          Aggiungi Alimento
         </button>
       </div>
     {/if}
@@ -226,7 +253,7 @@
 </main>
 
 <!-- Floating Action Button (FAB) -->
-<button class="fab" onclick={handleAddNew} aria-label="Add new food">
+<button class="fab" onclick={handleAddNew} aria-label="Aggiungi nuovo alimento">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
   </svg>
@@ -241,6 +268,60 @@
 {/if}
 
 <style>
+  .migration-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1.25rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+    border-bottom: 1px solid rgba(129, 140, 248, 0.3);
+    color: #f8fafc;
+  }
+
+  .migration-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .migration-icon {
+    font-size: 1.5rem;
+  }
+
+  .migration-text strong {
+    display: block;
+    font-size: 0.9rem;
+    color: #c084fc;
+  }
+
+  .migration-text p {
+    font-size: 0.8rem;
+    color: #cbd5e1;
+  }
+
+  .btn-migrate {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.6rem;
+    background: #6366f1;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+
+  .btn-migrate:hover:not(:disabled) {
+    background: #4f46e5;
+  }
+
+  .btn-migrate:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
   /* Layout components specific to Dashboard */
   .app-header {
     padding: 1.5rem;
@@ -496,13 +577,12 @@
     overflow-x: auto;
     margin: -0.25rem 0;
     padding: 0.25rem 0;
-    /* Hide scrollbars but keep functionality */
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
   .category-filters-container::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    display: none;
   }
 
   .category-filters {
