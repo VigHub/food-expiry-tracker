@@ -1,77 +1,53 @@
-# Smart Fridge - Expiry Tracker
+# 🥗 Smart Fridge - Food Expiry Tracker
 
-A client-side Svelte 5 web application to track food inventory and monitor expiration dates.
+[![Svelte 5](https://img.shields.io/badge/Svelte-5.0-orange?logo=svelte)](https://svelte.dev)
+[![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages-F38020?logo=cloudflare)](https://pages.cloudflare.com)
+[![Cloudflare D1](https://img.shields.io/badge/Database-Cloudflare_D1-blue?logo=sqlite)](https://developers.cloudflare.com/d1/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Features
+**Smart Fridge** is an intuitive, privacy-first web application designed to track food inventory, minimize household food waste, and alert you before your groceries expire. 
 
-- **Expiry Tracking**: Log items, quantities, categories, and custom notes.
-- **Visual Status & Stats**: Monitor total, expired, and expiring-soon items.
-- **Product Lookup**: Scan barcodes (via camera) or enter them manually to query the Open Food Facts API for product names, brands, categories, and images.
-- **Search & Filters**: Search food items by name, brand, or notes, filter by categories, and sort by expiry date, name, or date added.
-- **Data Portability**: Export inventory to a JSON file or import a backup file to restore data.
-- **Local Storage**: All data is persisted client-side in the browser's `localStorage`.
+Powered by **Svelte 5** and **Cloudflare D1**, it offers real-time cloud synchronization across mobile and desktop devices with built-in barcode scanning and password security.
 
-## Local Development
+---
 
-### Prerequisites
+## ✨ Highlights & Capabilities
 
-- Node.js (v18 or higher)
-- npm
+### 📱 Modern Glassmorphism Experience
+Built with a sleek, dark-mode native-like interface featuring smooth animations, responsive cards, and dynamic color-coded urgency badges.
 
-### Installation
+### 📷 Smart Barcode Scanner (Open Food Facts Integration)
+Point your mobile camera at any food barcode (EAN / UPC) or type the number manually. The app automatically fetches product titles, brands, categories, and cover images directly from the Open Food Facts global database.
 
-```sh
-npm install
-```
+### ☁️ Seamless Cloud Sync (Cloudflare D1)
+Your inventory stays up-to-date across all your family phones, tablets, and computers powered by Cloudflare's serverless SQLite edge database.
 
-### Run the Dev Server
+### 🔒 Password-Protected Access
+Keep your food inventory private with a built-in login screen using Web Crypto SHA-256 password hashing and secure HTTP-only session cookies.
 
-Run the development server locally:
+### ⏱️ Visual Expiry Intelligence
+- **Fresh**: Clear countdown display for products safely in date.
+- **Expiring Soon**: Highlights products expiring within 3 days so you can plan meals.
+- **Expired**: Instant alerts for items past their expiration date.
 
-```sh
-npm run dev
-```
+### 🔍 Instant Search & Smart Filtering
+Quickly find items by name, brand, or category. Sort inventory by expiration date, alphabetical order, or date added.
 
-To access the app from other devices on your local network (e.g., your phone), run it with the host flag:
+### 💾 Backup & Data Portability
+Full ownership of your data — export your entire food inventory to JSON at any time, or restore from previous backups.
 
-```sh
-npm run dev -- --host
-```
+---
 
-## Secure Contexts & Mobile Notes
+## 🛠️ Built With
 
-Standard web security policies restrict camera access APIs (`getUserMedia`) and cryptographic UUID generation (`crypto.randomUUID`) to **secure contexts** (HTTPS or `localhost`). 
+- **Framework**: [Svelte 5](https://svelte.dev) (Runes State Engine) & SvelteKit
+- **Cloud Infrastructure**: Cloudflare Pages Functions & `@sveltejs/adapter-cloudflare`
+- **Database**: Cloudflare D1 (Edge SQLite Database)
+- **Security**: Web Crypto API (SHA-256 + Salt hashing), HTTP-Only Cookies
+- **Barcode & Data**: `html5-qrcode` & Open Food Facts REST API
 
-When accessing the development server on a mobile phone over a local IP (e.g. `http://192.168.x.x:5173`):
-- **Camera Scanning**: The browser will block camera access. The app detects this and presents a manual input fallback where you can type standard barcode numbers (EAN/UPC) directly.
-- **ID Generation**: The app falls back to a pseudo-random generator if the secure `crypto.randomUUID` method is unavailable.
+---
 
-Deploying the application over HTTPS (e.g., via GitHub Pages) will automatically restore full camera access on mobile devices.
+## 📄 License
 
-## Build and Deployment
-
-### Static Hosting Configuration (e.g., GitHub Pages)
-
-To compile the application as a purely static site, SvelteKit can be configured to use `@sveltejs/adapter-static` instead of the default `@sveltejs/adapter-auto`.
-
-1. Install the static adapter:
-   ```sh
-   npm install -D @sveltejs/adapter-static
-   ```
-
-2. Replace the adapter import in `svelte.config.js`:
-   ```javascript
-   import adapter from '@sveltejs/adapter-static';
-   ```
-
-3. Create a layout configuration file at `src/routes/+layout.ts` (or `+layout.js`) to disable server-side rendering and force static builds:
-   ```typescript
-   export const prerender = true;
-   export const ssr = false;
-   ```
-
-4. Build the application:
-   ```sh
-   npm run build
-   ```
-   The compiled static files will be placed in the `build/` directory, ready to be hosted on GitHub Pages or any static file server.
+This project is licensed under the [MIT License](LICENSE).
