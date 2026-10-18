@@ -47,10 +47,14 @@
         barcode = item.barcode || '';
       }
     } else {
-      // Set default expiry date to today + 7 days
+      // Default expiry: 7 days for fridge, 90 days for freezer
       const defaultDate = new Date();
-      defaultDate.setDate(defaultDate.getDate() + 7);
+      const daysAhead = pantryStore.activeLocation === 'freezer' ? 90 : 7;
+      defaultDate.setDate(defaultDate.getDate() + daysAhead);
       expiryDate = defaultDate.toISOString().split('T')[0];
+      // Default category for active location
+      const cats = pantryStore.activeCategories();
+      category = cats[0] || 'Other';
     }
   });
 
@@ -66,7 +70,8 @@
       notes: notes.trim() || undefined,
       brand: brand.trim() || undefined,
       imageUrl: imageUrl.trim() || undefined,
-      barcode: barcode.trim() || undefined
+      barcode: barcode.trim() || undefined,
+      location: pantryStore.activeLocation
     };
 
     if (editItemId) {
@@ -241,7 +246,7 @@
           </div>
         {:else}
           <select id="food-category" class="form-select" bind:value={category}>
-            {#each pantryStore.allCategories() as cat}
+            {#each pantryStore.activeCategories() as cat}
               <option value={cat}>{cat}</option>
             {/each}
           </select>
@@ -274,8 +279,8 @@
         <button type="button" class="form-btn cancel-btn" onclick={onClose}>
           Cancel
         </button>
-        <button type="submit" class="form-btn save-btn">
-          {editItemId ? 'Save Changes' : 'Add to Fridge'}
+        <button type="submit" class="form-btn save-btn {pantryStore.activeLocation === 'freezer' ? 'save-btn-freezer' : ''}">
+          {editItemId ? 'Save Changes' : (pantryStore.activeLocation === 'freezer' ? 'Add to Freezer 🧊' : 'Add to Fridge ❄️')}
         </button>
       </div>
     </form>
@@ -513,6 +518,11 @@
     background: linear-gradient(135deg, var(--accent-primary) 0%, #4f46e5 100%);
     color: white;
     box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+  }
+
+  .save-btn-freezer {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%) !important;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3) !important;
   }
 
   .save-btn:active {

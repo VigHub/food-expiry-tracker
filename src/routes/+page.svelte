@@ -16,7 +16,7 @@
   // Derived properties from store
   const items = $derived(pantryStore.filteredItems());
   const stats = $derived(pantryStore.stats());
-  const categories = $derived(['All', ...pantryStore.allCategories()]);
+  const categories = $derived(['All', ...pantryStore.activeCategories()]);
 
   const handleEdit = (id: string) => {
     editingItemId = id;
@@ -32,6 +32,13 @@
   const handleAddNew = () => {
     editingItemId = null;
     showForm = true;
+  };
+
+  const switchLocation = (loc: 'fridge' | 'freezer') => {
+    pantryStore.activeLocation = loc;
+    // Reset filters when switching tabs
+    pantryStore.selectedCategory = 'All';
+    pantryStore.searchQuery = '';
   };
 
   const handleExport = () => {
@@ -147,6 +154,26 @@
     </div>
   {/if}
 
+  <!-- Location Tab Switcher (Fridge / Freezer) -->
+  <div class="location-tabs">
+    <button 
+      id="tab-fridge"
+      class="location-tab {pantryStore.activeLocation === 'fridge' ? 'active' : ''}" 
+      onclick={() => switchLocation('fridge')}
+    >
+      <span class="tab-icon">❄️</span>
+      <span>Frigo</span>
+    </button>
+    <button 
+      id="tab-freezer"
+      class="location-tab {pantryStore.activeLocation === 'freezer' ? 'active freezer-active' : ''}" 
+      onclick={() => switchLocation('freezer')}
+    >
+      <span class="tab-icon">🧊</span>
+      <span>Freezer</span>
+    </button>
+  </div>
+
   <!-- Stats Grid -->
   <div class="stats-grid">
     <div class="stat-card">
@@ -161,7 +188,7 @@
     
     <div class="stat-card ring-warning">
       <span class="stat-value text-warning">{stats.expiringSoon}</span>
-      <span class="stat-label">In Scadenza (3gg)</span>
+      <span class="stat-label">{pantryStore.activeLocation === 'freezer' ? 'In Scadenza (30gg)' : 'In Scadenza (3gg)'}</span>
     </div>
   </div>
 </header>
@@ -253,7 +280,7 @@
 </main>
 
 <!-- Floating Action Button (FAB) -->
-<button class="fab" onclick={handleAddNew} aria-label="Aggiungi nuovo alimento">
+<button class="fab {pantryStore.activeLocation === 'freezer' ? 'fab-freezer' : ''}" onclick={handleAddNew} aria-label="Aggiungi nuovo alimento">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
   </svg>
@@ -268,6 +295,54 @@
 {/if}
 
 <style>
+  /* Location Tab Switcher */
+  .location-tabs {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-full);
+    padding: 0.25rem;
+    border: 1px solid var(--surface-border);
+  }
+
+  .location-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-full);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    background: transparent;
+    border: none;
+  }
+
+  .location-tab .tab-icon {
+    font-size: 1rem;
+  }
+
+  .location-tab.active {
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+  }
+
+  .location-tab.freezer-active {
+    background: rgba(14, 165, 233, 0.2);
+    color: #7dd3fc;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2);
+  }
+
+  /* Freezer FAB color override */
+  .fab-freezer {
+    background: linear-gradient(135deg, #0ea5e9, #0369a1) !important;
+    box-shadow: 0 4px 20px rgba(14, 165, 233, 0.4) !important;
+  }
+
   .migration-banner {
     display: flex;
     justify-content: space-between;

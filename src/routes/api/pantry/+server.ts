@@ -11,6 +11,7 @@ export interface D1FoodItem {
 	brand?: string;
 	imageUrl?: string;
 	addedDate: string;
+	location: 'fridge' | 'freezer';
 }
 
 export const GET: RequestHandler = async ({ platform, locals }) => {
@@ -27,7 +28,7 @@ export const GET: RequestHandler = async ({ platform, locals }) => {
 
 	try {
 		const itemsResult = await db
-			.prepare('SELECT id, name, expiryDate, category, quantity, notes, barcode, brand, imageUrl, addedDate FROM items')
+			.prepare('SELECT id, name, expiryDate, category, quantity, notes, barcode, brand, imageUrl, addedDate, COALESCE(location, \'fridge\') as location FROM items')
 			.all<D1FoodItem>();
 
 		const categoriesResult = await db
@@ -61,8 +62,8 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 			const item: D1FoodItem = body.item;
 			await db
 				.prepare(
-					`INSERT OR REPLACE INTO items (id, name, expiryDate, category, quantity, notes, barcode, brand, imageUrl, addedDate)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+					`INSERT OR REPLACE INTO items (id, name, expiryDate, category, quantity, notes, barcode, brand, imageUrl, addedDate, location)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 				)
 				.bind(
 					item.id,
@@ -74,7 +75,8 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 					item.barcode || null,
 					item.brand || null,
 					item.imageUrl || null,
-					item.addedDate
+					item.addedDate,
+					item.location || 'fridge'
 				)
 				.run();
 			return json({ success: true });
@@ -106,8 +108,8 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 			for (const item of items) {
 				await db
 					.prepare(
-						`INSERT OR REPLACE INTO items (id, name, expiryDate, category, quantity, notes, barcode, brand, imageUrl, addedDate)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+						`INSERT OR REPLACE INTO items (id, name, expiryDate, category, quantity, notes, barcode, brand, imageUrl, addedDate, location)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 					)
 					.bind(
 						item.id,
@@ -119,7 +121,8 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 						item.barcode || null,
 						item.brand || null,
 						item.imageUrl || null,
-						item.addedDate
+						item.addedDate,
+						item.location || 'fridge'
 					)
 					.run();
 			}
@@ -151,7 +154,7 @@ export const PUT: RequestHandler = async ({ request, platform, locals }) => {
 		await db
 			.prepare(
 				`UPDATE items SET
-         name = ?, expiryDate = ?, category = ?, quantity = ?, notes = ?, barcode = ?, brand = ?, imageUrl = ?
+         name = ?, expiryDate = ?, category = ?, quantity = ?, notes = ?, barcode = ?, brand = ?, imageUrl = ?, location = ?
          WHERE id = ?`
 			)
 			.bind(
@@ -163,6 +166,7 @@ export const PUT: RequestHandler = async ({ request, platform, locals }) => {
 				item.barcode || null,
 				item.brand || null,
 				item.imageUrl || null,
+				item.location || 'fridge',
 				item.id
 			)
 			.run();
