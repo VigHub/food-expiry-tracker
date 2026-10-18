@@ -23,6 +23,7 @@ export interface FoodItem {
 	brand?: string;
 	imageUrl?: string;
 	addedDate: string; // YYYY-MM-DD
+	location: 'fridge' | 'freezer';
 }
 
 export const DEFAULT_CATEGORIES = [
@@ -37,6 +38,18 @@ export const DEFAULT_CATEGORIES = [
 	'Other'
 ];
 
+export const FREEZER_CATEGORIES = [
+	'Frozen Meat',
+	'Frozen Fish',
+	'Frozen Vegetables',
+	'Frozen Meals',
+	'Frozen Desserts',
+	'Ice Cream',
+	'Frozen Dough',
+	'Frozen Fruits',
+	'Other'
+];
+
 export class PantryStore {
 	// Reactive state using Svelte 5 runes
 	items = $state<FoodItem[]>([]);
@@ -47,6 +60,7 @@ export class PantryStore {
 	isSyncing = $state<boolean>(false);
 	syncError = $state<string>('');
 	hasLocalDataToMigrate = $state<boolean>(false);
+	activeLocation = $state<'fridge' | 'freezer'>('fridge');
 
 	constructor() {
 		if (browser) {
@@ -162,8 +176,14 @@ export class PantryStore {
 		}
 	}
 
-	// All categories (default + custom)
+	// All categories for fridge (default + custom)
 	allCategories = $derived(() => {
+		return [...DEFAULT_CATEGORIES, ...this.customCategories];
+	});
+
+	// Categories for the active location
+	activeCategories = $derived(() => {
+		if (this.activeLocation === 'freezer') return FREEZER_CATEGORIES;
 		return [...DEFAULT_CATEGORIES, ...this.customCategories];
 	});
 
@@ -172,7 +192,8 @@ export class PantryStore {
 		const newItem: FoodItem = {
 			...item,
 			id: generateUUID(),
-			addedDate: new Date().toISOString().split('T')[0]
+			addedDate: new Date().toISOString().split('T')[0],
+			location: item.location ?? this.activeLocation
 		};
 
 		// Optimistic UI update
@@ -297,9 +318,10 @@ export class PantryStore {
 		}
 	}
 
-	// Derived filtered items based on search and selected category
+	// Derived filtered items based on active location, search and selected category
 	filteredItems = $derived(() => {
-		let result = [...this.items];
+		// First filter by active location (fridge/freezer)
+		let result = this.items.filter((item) => (item.location ?? 'fridge') === this.activeLocation);
 
 		// Filter by category
 		if (this.selectedCategory !== 'All') {
@@ -333,31 +355,34 @@ export class PantryStore {
 		return result;
 	});
 
-	// Derived stats
+	// Derived stats — scoped to the active location
 	stats = $derived(() => {
 		const todayStr = new Date().toISOString().split('T')[0];
 		const today = new Date(todayStr).getTime();
 		const msInDay = 24 * 60 * 60 * 1000;
+		// Freezer items expire in months, so "expiring soon" = 30 days
+		const soonThreshold = this.activeLocation === 'freezer' ? 30 : 3;
 
-		let total = this.items.length;
+		const locationItems = this.items.filter((i) => (i.location ?? 'fridge') === this.activeLocation);
+		let total = locationItems.length;
 		let expired = 0;
-		let expiringSoon = 0; // within 3 days
+		let expiringSoon = 0;
 		let fresh = 0;
 
-		this.items.forEach((item) => {
+		locationItems.forEach((item) => {
 			const expiry = new Date(item.expiryDate).getTime();
 			const diffDays = Math.ceil((expiry - today) / msInDay);
 
 			if (diffDays < 0) {
 				expired++;
-			} else if (diffDays <= 3) {
+			} else if (diffDays <= soonThreshold) {
 				expiringSoon++;
 			} else {
 				fresh++;
 			}
 		});
 
-		return { total, expired, expiringSoon, fresh };
+		return { total, expired, expiringSoon, fresh, soonThreshold };
 	});
 
 	// Helper to calculate days remaining for a specific item

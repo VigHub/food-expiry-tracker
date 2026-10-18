@@ -11,8 +11,12 @@ CREATE TABLE IF NOT EXISTS items (
   brand TEXT,
   imageUrl TEXT,
   addedDate TEXT NOT NULL,
+  location TEXT NOT NULL DEFAULT 'fridge', -- 'fridge' | 'freezer'
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Migration: run this once on existing databases
+-- ALTER TABLE items ADD COLUMN location TEXT NOT NULL DEFAULT 'fridge';
 
 CREATE TABLE IF NOT EXISTS custom_categories (
   name TEXT PRIMARY KEY
