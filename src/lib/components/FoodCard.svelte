@@ -16,10 +16,11 @@
   // Calculate days remaining
   const daysRemaining = $derived(pantryStore.getDaysRemaining(item.expiryDate));
 
-  // Determine status
+  // Determine status — freezer items use 30-day threshold for "expiring soon"
   const status = $derived(() => {
+    const soonThreshold = (item.location ?? 'fridge') === 'freezer' ? 30 : 3;
     if (daysRemaining < 0) return 'expired';
-    if (daysRemaining <= 3) return 'warning';
+    if (daysRemaining <= soonThreshold) return 'warning';
     return 'fresh';
   });
 
